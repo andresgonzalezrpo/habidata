@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import io
 
 
 
@@ -17,24 +18,24 @@ def cargar_datos():
         data = pd.DataFrame()
     return data
 
-def explorar_datos(data):
-    """
-    Realiza un análisis exploratorio básico de los datos.
+# def explorar_datos(data):
+#     """
+#     Realiza un análisis exploratorio básico de los datos.
     
-    Args:
-        data (pandas.DataFrame): Datos del Titanic
-    """
-    print("\nPrimeras 5 filas del conjunto de datos:")
-    print(data.head())
+#     Args:
+#         data (pandas.DataFrame): Datos del Titanic
+#     """
+#     print("\nPrimeras 5 filas del conjunto de datos:")
+#     print(data.head())
     
-    print("\nInformación del conjunto de datos:")
-    print(data.info())
+#     print("\nInformación del conjunto de datos:")
+#     print(data.info())
     
-    print("\nEstadísticas descriptivas:")
-    print(data.describe())
+#     print("\nEstadísticas descriptivas:")
+#     print(data.describe())
     
-    print("\nValores faltantes por columna:")
-    print(data.isnull().sum())
+#     print("\nValores faltantes por columna:")
+#     print(data.isnull().sum())
     
     # # Guardar visualizaciones en archivos
     # # Distribución de la variable objetivo
@@ -82,7 +83,22 @@ def explorar_datos(data):
     # plt.xlabel('Tamaño de Familia')
     # plt.ylabel('Tasa de Supervivencia')
     # plt.savefig('titanic_familia_supervivencia.png', dpi=300, bbox_inches='tight')
+
+    # return data
+
+def explorar_datos(data):
+    """
+    Realiza un análisis exploratorio básico de los datos y retorna resultados como tablas.
+    """
+    results = {}
+    results["Primeras 5 filas"] = data.head()
+    # data.info() prints to stdout, so capture it as a string
     
-    return data
+    buffer = io.StringIO()
+    data.info(buf=buffer)
+    results["Info"] = buffer.getvalue()
+    results["Estadísticas descriptivas"] = data.describe()
+    results["Valores faltantes por columna"] = data.isnull().sum()
+    return results    
 
     

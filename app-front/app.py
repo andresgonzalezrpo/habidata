@@ -60,23 +60,56 @@ with tab1:
         st.success("¡Datos cargados exitosamente!")
         st.dataframe(st.session_state.data.head())
 
+# with tab2:
+#     st.header("Paso 2: Análisis Exploratorio de Datos (EDA)")
+#     if st.session_state.data is not None:
+#         if st.button("Explorar Datos"):
+#             with st.spinner("Generando visualizaciones..."):
+#                 # Capturamos los prints para mostrarlos en la app
+#                 old_stdout = sys.stdout
+#                 sys.stdout = captured_output = io.StringIO()
+
+#                 # Ejecutamos la función y guardamos las figuras
+#                 df_explorado = explorar_datos(st.session_state.data.copy())
+                
+#                 # Restauramos la salida estándar
+#                 sys.stdout = old_stdout
+                
+#                 st.subheader("Información y Estadísticas")
+
+#                 output_lines = captured_output.getvalue().split('\n')
+#                 for line in output_lines:
+#                     st.dataframe(line)
+
+#                 # st.subheader("Visualizaciones")
+#                 # # Mostramos las imágenes guardadas por la función
+#                 # st.image('titanic_supervivencia.png', caption='Distribución de Supervivencia')
+#                 # st.image('titanic_supervivencia_sexo.png', caption='Tasa de Supervivencia por Sexo')
+#                 # st.image('titanic_supervivencia_clase.png', caption='Tasa de Supervivencia por Clase')
+#                 # st.image('titanic_edad_supervivencia.png', caption='Distribución de Edades por Supervivencia')
+#                 # st.image('titanic_familia_supervivencia.png', caption='Tasa de Supervivencia por Tamaño de Familia')
+                
+#                 # Guardamos el dataframe con la nueva columna 'FamilySize'
+#                 st.session_state.data = df_explorado
+#                 st.success("Análisis exploratorio completado.")
+#     else:
+#         st.warning("Por favor, carga los datos en la Pestaña 1 (Cargar Datos) primero.")
+
 with tab2:
     st.header("Paso 2: Análisis Exploratorio de Datos (EDA)")
     if st.session_state.data is not None:
         if st.button("Explorar Datos"):
             with st.spinner("Generando visualizaciones..."):
                 # Capturamos los prints para mostrarlos en la app
-                old_stdout = sys.stdout
-                sys.stdout = captured_output = io.StringIO()
-
-                # Ejecutamos la función y guardamos las figuras
-                df_explorado = explorar_datos(st.session_state.data.copy())
-                
-                # Restauramos la salida estándar
-                sys.stdout = old_stdout
-                
-                st.subheader("Información y Estadísticas")
-                st.text(captured_output.getvalue())
+                results = explorar_datos(st.session_state.data.copy())
+                st.subheader("Primeras 5 filas")
+                st.dataframe(results["Primeras 5 filas"])
+                st.subheader("Info")
+                st.text(results["Info"])
+                st.subheader("Estadísticas descriptivas")
+                st.dataframe(results["Estadísticas descriptivas"])
+                st.subheader("Valores faltantes por columna")
+                st.dataframe(results["Valores faltantes por columna"])
 
                 # st.subheader("Visualizaciones")
                 # # Mostramos las imágenes guardadas por la función
@@ -87,7 +120,7 @@ with tab2:
                 # st.image('titanic_familia_supervivencia.png', caption='Tasa de Supervivencia por Tamaño de Familia')
                 
                 # Guardamos el dataframe con la nueva columna 'FamilySize'
-                st.session_state.data = df_explorado
+                #st.session_state.data = df_explorado
                 st.success("Análisis exploratorio completado.")
     else:
         st.warning("Por favor, carga los datos en la Pestaña 1 (Cargar Datos) primero.")
