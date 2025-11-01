@@ -92,11 +92,7 @@ def explorar_datos(data):
     """
     results = {}
     results["Primeras 5 filas"] = data.head()
-    # data.info() prints to stdout, so capture it as a string
-    
-    buffer = io.StringIO()
-    data.info(buf=buffer)
-    results["Info"] = buffer.getvalue()
+    #results["Info"] = data.info()
     results["Estadísticas descriptivas"] = data.describe()
     results["Valores faltantes por columna"] = data.isnull().sum()
     return results    
