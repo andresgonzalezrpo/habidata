@@ -95,6 +95,14 @@ with tab1:
 #     else:
 #         st.warning("Por favor, carga los datos en la Pestaña 1 (Cargar Datos) primero.")
 
+def info_as_dataframe(df):
+    info = {
+        "Column": df.columns,
+        "Non-Null Count": df.notnull().sum(),
+        "Dtype": df.dtypes.astype(str)
+    }
+    return pd.DataFrame(info)
+
 with tab2:
     st.header("Paso 2: Análisis Exploratorio de Datos (EDA)")
     if st.session_state.data is not None:
@@ -105,11 +113,13 @@ with tab2:
                 st.subheader("Primeras 5 filas")
                 st.dataframe(results["Primeras 5 filas"])
                 st.subheader("Info")
-                st.text(results["Info"])
+                st.dataframe(info_as_dataframe(st.session_state.data))
                 st.subheader("Estadísticas descriptivas")
                 st.dataframe(results["Estadísticas descriptivas"])
                 st.subheader("Valores faltantes por columna")
-                st.dataframe(results["Valores faltantes por columna"])
+                missing = st.session_state.data.isnull().sum().reset_index()
+                missing.columns = ['Columna', 'Valores Faltantes']
+                st.dataframe(missing, width='content')
 
                 # st.subheader("Visualizaciones")
                 # # Mostramos las imágenes guardadas por la función
@@ -124,4 +134,8 @@ with tab2:
                 st.success("Análisis exploratorio completado.")
     else:
         st.warning("Por favor, carga los datos en la Pestaña 1 (Cargar Datos) primero.")
+
+
+
+# En tu Streamlit app:
 
