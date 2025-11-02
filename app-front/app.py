@@ -132,7 +132,10 @@ with tab2:
                 st.markdown("**Columnas categóricas:**<br>" + ", ".join(results['Columnas categóricas']), unsafe_allow_html=True)
                 # Distribución de variables númericas
                 st.subheader("Distribución de variables numéricas")
-                st.image("distribucion_numericas.png", caption="Distribución de variables numéricas")
+                st.image("boxplots_numericas.png", caption="Distribución de variables numéricas")
+                # correlaciones entre variables numéricas
+                st.subheader("Matriz de correlación entre variables numéricas")
+                st.image('matriz_correlacion.png', caption='Matriz de correlación')
                 # st.subheader("Visualizaciones")
                 # # Mostramos las imágenes guardadas por la función
                 # st.image('titanic_supervivencia.png', caption='Distribución de Supervivencia')

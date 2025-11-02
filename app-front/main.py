@@ -3,6 +3,7 @@ import os
 import io
 import matplotlib.pyplot as plt
 import seaborn as sns
+import math
 
 
 
@@ -93,6 +94,39 @@ def identificar_tipos_columnas(dataframe):
     categoricas = dataframe.select_dtypes(include=['object', 'category', 'bool']).columns.tolist()
     return numericas, categoricas
 
+def correlacion_variables(data, columnas_numericas):
+    """
+    Calcula y visualiza la matriz de correlación para las variables numéricas especificadas.
+    """
+    correlaciones = data[columnas_numericas].corr()
+    # Guardar la matriz de correlación como una imagen
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(correlaciones, annot=True, cmap='coolwarm')
+    plt.title('Matriz de Correlación')
+    plt.savefig('matriz_correlacion.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    return correlaciones
+
+def graficar_distribucion_numericas(data, columnas_numericas):
+    img_path = "boxplots_numericas.png"
+    if not os.path.exists(img_path):
+        n = len(columnas_numericas)
+        ncols = 2 if n <= 4 else 3
+        nrows = math.ceil(n / ncols)
+        fig, axes = plt.subplots(nrows, ncols, figsize=(5 * ncols, 4 * nrows))
+        axes = axes.flatten() if n > 1 else [axes]
+        for i, column in enumerate(columnas_numericas):
+            if column in data.columns:
+                sns.boxplot(x=data[column].dropna(), ax=axes[i])
+                axes[i].set_title(f'Boxplot de {column}')
+            else:
+                axes[i].set_visible(False)
+        # Oculta los ejes no usados
+        for j in range(i + 1, len(axes)):
+            axes[j].set_visible(False)
+        plt.tight_layout()
+        fig.savefig(img_path)
+        plt.close(fig)
 
 def explorar_datos(data):
     """
@@ -109,23 +143,15 @@ def explorar_datos(data):
 
     results["Columnas numéricas"], results["Columnas categóricas"] = identificar_tipos_columnas(data)
 
-    # Solo crear la imagen si no existe
-    img_path = "distribucion_numericas.png"
-    if not os.path.exists(img_path):
-        columnas_numericas = ['bedrooms', 'bathrooms', 'price', 'surface_total', 'lat', 'lon']
-        fig, axes = plt.subplots(2, 3, figsize=(18, 8))
-        axes = axes.flatten()
+    # Graficar distribución de variables numéricas
+    columnas_a_graficar = ['bedrooms', 'bathrooms', 'price', 'surface_total']
+    graficar_distribucion_numericas(data, columnas_a_graficar)
 
-        for i, column in enumerate(columnas_numericas):
-            if column in data.columns:
-                sns.histplot(data[column].dropna(), kde=True, ax=axes[i])
-                axes[i].set_title(f'Distribución de {column}')
-            else:
-                axes[i].set_visible(False)
+    # Usar solo columnas numéricas para la correlación
+    columnas = ['bedrooms', 'bathrooms', 'price', 'surface_total', 'surface_covered','surface_total','rooms','lat','lon']
+    correlacion_variables(data, columnas)
 
-        plt.tight_layout()
-        fig.savefig(img_path)
-        plt.close(fig)
-   
     return results
+
+
 
