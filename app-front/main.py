@@ -1,6 +1,8 @@
 import pandas as pd
 import os
 import io
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 
@@ -86,15 +88,44 @@ def cargar_datos():
 
     # return data
 
+def identificar_tipos_columnas(dataframe):
+    numericas = dataframe.select_dtypes(include=['int64', 'float64']).columns.tolist()
+    categoricas = dataframe.select_dtypes(include=['object', 'category', 'bool']).columns.tolist()
+    return numericas, categoricas
+
+
 def explorar_datos(data):
     """
     Realiza un análisis exploratorio básico de los datos y retorna resultados como tablas.
     """
     results = {}
-    results["Primeras 5 filas"] = data.head()
+    #results["Primeras 5 filas"] = data.head()
     #results["Info"] = data.info()
+    results["Cantidad de registros"] = data.shape
     results["Estadísticas descriptivas"] = data.describe()
     results["Valores faltantes por columna"] = data.isnull().sum()
-    return results    
 
-    
+    # Función para determinar columnas numéricas y categóricas
+
+    results["Columnas numéricas"], results["Columnas categóricas"] = identificar_tipos_columnas(data)
+
+    # Solo crear la imagen si no existe
+    img_path = "distribucion_numericas.png"
+    if not os.path.exists(img_path):
+        columnas_numericas = ['bedrooms', 'bathrooms', 'price', 'surface_total', 'lat', 'lon']
+        fig, axes = plt.subplots(2, 3, figsize=(18, 8))
+        axes = axes.flatten()
+
+        for i, column in enumerate(columnas_numericas):
+            if column in data.columns:
+                sns.histplot(data[column].dropna(), kde=True, ax=axes[i])
+                axes[i].set_title(f'Distribución de {column}')
+            else:
+                axes[i].set_visible(False)
+
+        plt.tight_layout()
+        fig.savefig(img_path)
+        plt.close(fig)
+   
+    return results
+

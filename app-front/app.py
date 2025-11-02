@@ -108,10 +108,15 @@ with tab2:
     if st.session_state.data is not None:
         if st.button("Explorar Datos"):
             with st.spinner("Generando visualizaciones..."):
-                # Capturamos los prints para mostrarlos en la app
+                
                 results = explorar_datos(st.session_state.data.copy())
-                st.subheader("Primeras 5 filas")
-                st.dataframe(results["Primeras 5 filas"])
+                st.subheader("Cantidad de registros")
+                # Mostrar cantidad de registros
+                st.write(
+                    f"Registros: {results['Cantidad de registros'][0]}, "
+                    f"Columnas: {results['Cantidad de registros'][1]}"
+                )
+
                 st.subheader("Info")
                 st.dataframe(info_as_dataframe(st.session_state.data))
                 st.subheader("Estadísticas descriptivas")
@@ -119,8 +124,15 @@ with tab2:
                 st.subheader("Valores faltantes por columna")
                 missing = st.session_state.data.isnull().sum().reset_index()
                 missing.columns = ['Columna', 'Valores Faltantes']
+                missing['% Faltantes'] = (missing['Valores Faltantes'] / len(st.session_state.data) * 100).round(2)
                 st.dataframe(missing, width='content')
-
+                # columnas categoricas y numericas
+                st.subheader("Tipos de columnas")
+                st.markdown("**Columnas numéricas:**<br>" + ", ".join(results['Columnas numéricas']), unsafe_allow_html=True)
+                st.markdown("**Columnas categóricas:**<br>" + ", ".join(results['Columnas categóricas']), unsafe_allow_html=True)
+                # Distribución de variables númericas
+                st.subheader("Distribución de variables numéricas")
+                st.image("distribucion_numericas.png", caption="Distribución de variables numéricas")
                 # st.subheader("Visualizaciones")
                 # # Mostramos las imágenes guardadas por la función
                 # st.image('titanic_supervivencia.png', caption='Distribución de Supervivencia')
