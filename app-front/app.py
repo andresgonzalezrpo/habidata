@@ -9,7 +9,8 @@ import seaborn as sns
 try:
     from main import (
        cargar_datos,
-       explorar_datos
+       explorar_datos,
+       preparar_datos
     )
 except ImportError:
     st.error("Error: no se cargaron los datos correctamente")
@@ -60,41 +61,7 @@ with tab1:
         st.success("¡Datos cargados exitosamente!")
         st.dataframe(st.session_state.data.head())
 
-# with tab2:
-#     st.header("Paso 2: Análisis Exploratorio de Datos (EDA)")
-#     if st.session_state.data is not None:
-#         if st.button("Explorar Datos"):
-#             with st.spinner("Generando visualizaciones..."):
-#                 # Capturamos los prints para mostrarlos en la app
-#                 old_stdout = sys.stdout
-#                 sys.stdout = captured_output = io.StringIO()
-
-#                 # Ejecutamos la función y guardamos las figuras
-#                 df_explorado = explorar_datos(st.session_state.data.copy())
-                
-#                 # Restauramos la salida estándar
-#                 sys.stdout = old_stdout
-                
-#                 st.subheader("Información y Estadísticas")
-
-#                 output_lines = captured_output.getvalue().split('\n')
-#                 for line in output_lines:
-#                     st.dataframe(line)
-
-#                 # st.subheader("Visualizaciones")
-#                 # # Mostramos las imágenes guardadas por la función
-#                 # st.image('titanic_supervivencia.png', caption='Distribución de Supervivencia')
-#                 # st.image('titanic_supervivencia_sexo.png', caption='Tasa de Supervivencia por Sexo')
-#                 # st.image('titanic_supervivencia_clase.png', caption='Tasa de Supervivencia por Clase')
-#                 # st.image('titanic_edad_supervivencia.png', caption='Distribución de Edades por Supervivencia')
-#                 # st.image('titanic_familia_supervivencia.png', caption='Tasa de Supervivencia por Tamaño de Familia')
-                
-#                 # Guardamos el dataframe con la nueva columna 'FamilySize'
-#                 st.session_state.data = df_explorado
-#                 st.success("Análisis exploratorio completado.")
-#     else:
-#         st.warning("Por favor, carga los datos en la Pestaña 1 (Cargar Datos) primero.")
-
+# --- Pestaña 2: Análisis Exploratorio de Datos (EDA) ---
 def info_as_dataframe(df):
     info = {
         "Column": df.columns,
@@ -109,18 +76,18 @@ with tab2:
         if st.button("Explorar Datos"):
             with st.spinner("Generando visualizaciones..."):
                 
-                results = explorar_datos(st.session_state.data.copy())
+                df_explorado = explorar_datos(st.session_state.data.copy())
                 st.subheader("Cantidad de registros")
                 # Mostrar cantidad de registros
                 st.write(
-                    f"Registros: {results['Cantidad de registros'][0]}, "
-                    f"Columnas: {results['Cantidad de registros'][1]}"
+                    f"Registros: {df_explorado['Cantidad de registros'][0]}, "
+                    f"Columnas: {df_explorado['Cantidad de registros'][1]}"
                 )
 
                 st.subheader("Info")
                 st.dataframe(info_as_dataframe(st.session_state.data))
                 st.subheader("Estadísticas descriptivas")
-                st.dataframe(results["Estadísticas descriptivas"])
+                st.dataframe(df_explorado["Estadísticas descriptivas"])
                 st.subheader("Valores faltantes por columna")
                 missing = st.session_state.data.isnull().sum().reset_index()
                 missing.columns = ['Columna', 'Valores Faltantes']
@@ -128,29 +95,73 @@ with tab2:
                 st.dataframe(missing, width='content')
                 # columnas categoricas y numericas
                 st.subheader("Tipos de columnas")
-                st.markdown("**Columnas numéricas:**<br>" + ", ".join(results['Columnas numéricas']), unsafe_allow_html=True)
-                st.markdown("**Columnas categóricas:**<br>" + ", ".join(results['Columnas categóricas']), unsafe_allow_html=True)
+                st.markdown("**Columnas numéricas:**<br>" + ", ".join(df_explorado['Columnas numéricas']), unsafe_allow_html=True)
+                st.markdown("**Columnas categóricas:**<br>" + ", ".join(df_explorado['Columnas categóricas']), unsafe_allow_html=True)
                 # Distribución de variables númericas
                 st.subheader("Distribución de variables numéricas")
                 st.image("boxplots_numericas.png", caption="Distribución de variables numéricas")
                 # correlaciones entre variables numéricas
                 st.subheader("Matriz de correlación entre variables numéricas")
-                st.image('matriz_correlacion.png', caption='Matriz de correlación')
-                # st.subheader("Visualizaciones")
-                # # Mostramos las imágenes guardadas por la función
-                # st.image('titanic_supervivencia.png', caption='Distribución de Supervivencia')
-                # st.image('titanic_supervivencia_sexo.png', caption='Tasa de Supervivencia por Sexo')
-                # st.image('titanic_supervivencia_clase.png', caption='Tasa de Supervivencia por Clase')
-                # st.image('titanic_edad_supervivencia.png', caption='Distribución de Edades por Supervivencia')
-                # st.image('titanic_familia_supervivencia.png', caption='Tasa de Supervivencia por Tamaño de Familia')
-                
-                # Guardamos el dataframe con la nueva columna 'FamilySize'
-                #st.session_state.data = df_explorado
+                st.image('matriz_correlacion.png', caption='Matriz de correlación')                
+               
+                st.session_state.data = df_explorado
                 st.success("Análisis exploratorio completado.")
     else:
         st.warning("Por favor, carga los datos en la Pestaña 1 (Cargar Datos) primero.")
 
 
 
-# En tu Streamlit app:
+# --- Pestaña 3: Preparación de Datos ---
+with tab3:
+    st.header("Paso 3: Preparar los Datos para el Modelo")
+    if st.session_state.data is not None:
+        if st.button("Preparar Datos"):
+            with st.spinner("Dividiendo y preprocesando los datos..."):
+                st.markdown(
+                    """
+**Proceso de limpieza y preparación de la data:**
+
+1. **Filtro por Antioquia:** Se seleccionan solo los registros correspondientes al departamento de Antioquia.
+2. **Limpieza de datos con coordenadas fuera de Antioquia:** Se eliminan registros con coordenadas geográficas incorrectas.
+3. **Limpieza de valores inválidos:** Se corrigen o eliminan datos inconsistentes.
+4. **Eliminar columnas con 0 registros (l5 y l6):** Se eliminan columnas vacías.
+5. **Filtrar solo valores en pesos colombianos:** Se conservan solo los registros con precios en COP.
+6. **Filtrar por tipos de propiedad:** Solo se incluyen Apartamentos y Casas.
+7. **Eliminación de la columna Rooms:** Se elimina por ser idéntica a bedrooms.
+8. **Filtrar solo propiedades en venta:** Se eliminan registros de arriendo o arriendo temporal.
+9. **Recuperación de Área desde la columna descripción:** Se extrae el área en m² desde el texto.
+10. **Recuperación de # de baños y # de bedrooms desde la columna descripción:** Se extraen estos valores desde el texto.
+11. **Recuperación de ubicaciones como barrios y ciudades desde la columna descripción y titles:** Se extraen ubicaciones relevantes desde los textos descriptivos.
+                    """,
+                    unsafe_allow_html=True
+                )
+                st.subheader("dataframe preparado")
+                df_preparado = preparar_datos()
+
+                
+                st.dataframe(df_preparado.head())
+                st.subheader("Cantidad de registros")
+                # Mostrar cantidad de registros
+                st.write(
+                    f"Registros: {df_preparado.shape[0]}, "
+                    f"Columnas: {df_preparado.shape[1]}"
+                )
+                st.dataframe(info_as_dataframe(df_preparado))
+                st.session_state.data = df_preparado
+
+
+
+                # X_train, X_test, y_train, y_test, preprocessor = preparar_datos(st.session_state.data)
+                
+                # # Guardamos los resultados en el estado de la sesión
+                # st.session_state.prepared_data = (X_train, X_test, y_train, y_test)
+                # st.session_state.preprocessor = preprocessor
+                
+                # st.success("Datos preparados exitosamente.")
+                # st.info(f"Tamaño del conjunto de entrenamiento: {X_train.shape[0]} muestras")
+                # st.info(f"Tamaño del conjunto de prueba: {X_test.shape[0]} muestras")
+                # st.write("Vista previa de los datos de entrenamiento (X_train):")
+                # st.dataframe(X_train.head())
+    else:
+        st.warning("Por favor, carga los datos en la Pestaña 1 (Cargar Datos) primero.")
 
