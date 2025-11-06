@@ -4,6 +4,7 @@ import io
 import matplotlib.pyplot as plt
 import seaborn as sns
 import math
+import matplotlib.pyplot as plt
 
 
 
@@ -62,6 +63,46 @@ def graficar_distribucion_numericas(data, columnas_numericas):
         fig.savefig(img_path)
         plt.close(fig)
 
+
+
+def graficar_barrios(data):
+    columna = 'l4'  # Columna fija para graficar los barrios
+
+    if columna not in data.columns:
+        print(f"Advertencia: La columna '{columna}' no existe en el DataFrame.")
+        return
+
+    # Definir la ruta de la imagen
+    img_path = "grafico_barrios_l4.png"
+
+    # Verificar si la imagen ya existe
+    if os.path.exists(img_path):
+        print(f"El gráfico ya existe: {img_path}")
+        return
+
+    # Contar la cantidad de datos por barrio
+    conteo_barrios = data[columna].value_counts()
+
+    # Crear el gráfico de barras
+    plt.figure(figsize=(14, 10))  # Aumentar el tamaño del gráfico para más espacio
+    ax = conteo_barrios.plot(kind='barh', color='skyblue')  # Cambiar a gráfico de barras horizontales
+    plt.title('Cantidad de datos por barrio', fontsize=16)
+    plt.xlabel('Cantidad de datos', fontsize=14)
+    plt.ylabel('Barrios', fontsize=14, labelpad=20, rotation=0)  # Mantener el ylabel horizontal
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+
+    # Agregar el conteo al final de cada barra
+    for i, v in enumerate(conteo_barrios):
+        ax.text(v + 1, i, str(v), color='black', va='center', fontsize=12)
+
+    # Guardar el gráfico como una imagen
+    plt.tight_layout()
+    plt.savefig(img_path, dpi=300, bbox_inches='tight')
+    plt.close()
+
+    print(f"Gráfico guardado como {img_path}")
+
 def explorar_datos(data):
     """
     Realiza un análisis exploratorio básico de los datos y retorna resultados como tablas.
@@ -85,6 +126,9 @@ def explorar_datos(data):
     columnas = ['bedrooms', 'bathrooms', 'price', 'surface_total', 'surface_covered','surface_total','rooms','lat','lon']
     correlacion_variables(data, columnas)
 
+    # histograma de la variable objetivo 'l4_final'
+    graficar_barrios(data)
+
     return results
 
 def preparar_datos():
@@ -101,7 +145,12 @@ def preparar_datos():
         print("Archivo no encontrado.")
         # Aquí podrías descargar o crear un DataFrame vacío
         data = pd.DataFrame()
+    print(data.columns)
     return data
+
+
+
+
 
 
 

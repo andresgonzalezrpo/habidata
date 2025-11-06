@@ -4,6 +4,7 @@ import pandas as pd
 import io
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
 
 
 try:
@@ -25,7 +26,7 @@ st.set_page_config(
 
 st.title("🏠 Análisis de precios para propiedades en Antioquia según sus características")
 st.write("Esta aplicación interactiva te permite ver todo el proceso de análisis de datos, desde la carga y limpieza de los datos hasta la visualización y modelado predictivo" \
-" utilizando un conjunto de datos de propiedades en Antioquia.")
+" utilizando un conjunto de datos de propiedades en Antioquia con precios del 2021 y 2021")
 
 # --- Inicialización del estado de la sesión ---
 # El estado de la sesión se usa para guardar variables entre interacciones
@@ -103,8 +104,13 @@ with tab2:
                 st.image("boxplots_numericas.png", caption="Distribución de variables numéricas")
                 # correlaciones entre variables numéricas
                 st.subheader("Matriz de correlación entre variables numéricas")
-                st.image('matriz_correlacion.png', caption='Matriz de correlación')                
+                st.image('matriz_correlacion.png', caption='Matriz de correlación')    
+                # histograma de la variable objetivo
+                st.subheader("Histograma de barrios")
+                st.image("grafico_barrios_l4.png", caption="Cantidad de datos por barrio")
                
+
+                
                 st.session_state.data = df_explorado
                 st.success("Análisis exploratorio completado.")
     else:
@@ -183,7 +189,7 @@ with tab3:
             'Propiedades': [262856, 24171, 10836, 8728, 8166, 7566, 2206, 1921],
             'Porcentaje': ['77.0%', '7.1%', '3.2%', '2.6%', '2.4%', '2.2%', '0.6%', '0.6%']
         }
-        st.dataframe(pd.DataFrame(ciudades_data), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(ciudades_data), width='stretch', hide_index=True)
     
     # ============================================================
     # PASO 2: LIMPIEZA DE PRECIOS
@@ -415,7 +421,7 @@ with tab3:
             'Valores Completados': ['45,755', '81,447', '10,795'],
             'Mejora': ['33.2%', '79.8%', '57.6%']
         }
-        st.dataframe(pd.DataFrame(integracion_data), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(integracion_data), width='stretch', hide_index=True)
         
         st.metric("Total Valores Completados", "137,997", delta="Mejora en completitud")
     
@@ -520,7 +526,7 @@ with tab3:
     
     st.dataframe(
         pd.DataFrame(resumen_pipeline),
-        use_container_width=True,
+        width='stretch',
         hide_index=True
     )
     
