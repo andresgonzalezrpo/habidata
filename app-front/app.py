@@ -11,7 +11,9 @@ try:
     from main import (
        cargar_datos,
        explorar_datos,
-       preparar_datos
+       preparar_datos,
+       preparar_modelo,
+       entrenar_evaluar_modelos
     )
 except ImportError:
     st.error("Error: no se cargaron los datos correctamente")
@@ -26,7 +28,7 @@ st.set_page_config(
 
 st.title("🏠 Análisis de precios para propiedades en Antioquia según sus características")
 st.write("Esta aplicación interactiva te permite ver todo el proceso de análisis de datos, desde la carga y limpieza de los datos hasta la visualización y modelado predictivo" \
-" utilizando un conjunto de datos de propiedades en Antioquia con precios del 2021 y 2021")
+" utilizando un conjunto de datos de propiedades en Antioquia con precios del 2020 y 2021")
 
 # --- Inicialización del estado de la sesión ---
 # El estado de la sesión se usa para guardar variables entre interacciones
@@ -34,6 +36,8 @@ if 'data' not in st.session_state:
     st.session_state.data = None
 if 'prepared_data' not in st.session_state:
     st.session_state.prepared_data = None
+if 'prepared_model' not in st.session_state:
+    st.session_state.prepared_model = None
 if 'best_model' not in st.session_state:
     st.session_state.best_model = None
 if 'model_name' not in st.session_state:
@@ -617,9 +621,9 @@ with tab3:
         Calidad: Premium - Sin valores faltantes en predictores
         """, language="text")
 
-# --- Pestaña 3: Preparación de Datos ---
+# --- Pestaña 4: Preparación de Datos ---
 with tab4:
-    st.header("Paso 3: Preparar los Datos para el Modelo")   
+    st.header("Paso 4: Preparar los Datos para el Modelo")   
     
     with st.spinner("Cargando datos..."):
         st.session_state.prepared_data = preparar_datos()
@@ -629,7 +633,7 @@ with tab4:
 
 
     if st.session_state.prepared_data is not None:
-        if st.button("Preparar Datos"):
+        if st.button("Preparar Modelo"):
             # graficar boxplot de la variable objetivo sin outliers
             plots_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plots')
             st.subheader("Limpieza de outliers en la variable objetivo (precio)")
@@ -637,28 +641,58 @@ with tab4:
 
             st.subheader("Limpieza de outliers en el área total")
             st.image(os.path.join(plots_dir, "dispersión_surface_total_final.png"), caption="Dispersión de superficie total final")
+            X_train, X_test, y_train, y_test, preprocessor = preparar_modelo(st.session_state.prepared_data)
+            print(f"Tamaño del conjunto de entrenamiento: {X_train.shape[0]} muestras")
+            print(f"Tamaño del conjunto de prueba: {X_test.shape[0]} muestras")
 
-
-
-
-
-
-    #         with st.spinner("Dividiendo y preprocesando los datos..."):
-    #             X_train, X_test, y_train, y_test, preprocessor = preparar_datos(st.session_state.prepared_data)
-
-    #             # Guardamos los resultados en el estado de la sesión
-    #             st.session_state.prepared_data = (X_train, X_test, y_train, y_test)
-    #             st.session_state.preprocessor = preprocessor
                 
-    #             st.success("Datos preparados exitosamente.")
-    #             st.info(f"Tamaño del conjunto de entrenamiento: {X_train.shape[0]} muestras")
-    #             st.info(f"Tamaño del conjunto de prueba: {X_test.shape[0]} muestras")
-    #             st.write("Vista previa de los datos de entrenamiento (X_train):")
-    #             st.dataframe(X_train.head())
-    # else:
-    #     st.warning("Por favor, carga los datos en la Pestaña 1 (Cargar Datos) primero.")
+            # Guardamos los resultados en el estado de la sesión
+            st.session_state.prepared_model = (X_train, X_test, y_train, y_test)
+            st.session_state.preprocessor = preprocessor
+            
+            st.success("Datos preparados exitosamente.")
+            st.info(f"Tamaño del conjunto de entrenamiento: {X_train.shape[0]} muestras")
+            st.info(f"Tamaño del conjunto de prueba: {X_test.shape[0]} muestras")
+            st.write("Vista previa de los datos de entrenamiento (X_train):")
+            st.dataframe(X_train.head())
 
-      
+with tab5:
+    st.header("Paso 4: Entrenar y Evaluar Múltiples Modelos")
+    if st.session_state.prepared_model is not None:
+        if st.button("Entrenar y Evaluar Modelos"):
+            with st.spinner("Entrenando modelos y evaluando... Esto puede tardar un momento."):
+                X_train, X_test, y_train, y_test = st.session_state.prepared_model
+                preprocessor = st.session_state.preprocessor               
+
+                best_model = entrenar_evaluar_modelos(X_train, X_test, y_train, y_test, preprocessor)
+                
+                
+    #             st.subheader("Resultados de la Validación Cruzada")
+                
+    #             st.image('titanic_comparacion_modelos.png', caption='Comparación de Modelos')
+
+    #             st.subheader(f"Rendimiento del Mejor Modelo ({best_model_name}) en el Conjunto de Prueba")
+    #             st.text('Rendimiento en el conjunto de prueba:' + captured_output.getvalue().split('Rendimiento en el conjunto de prueba:')[1])
+                
+    #             col1, col2 = st.columns(2)
+    #             with col1:
+    #                 st.image('titanic_matriz_confusion.png', caption='Matriz de Confusión')
+    #             with col2:
+    #                 st.image('titanic_curva_roc.png', caption='Curva ROC')
+
+    #             # Guardamos el mejor modelo
+    #             st.session_state.best_model = best_pipeline
+    #             st.session_state.model_name = best_model_name
+    #             st.success(f"Entrenamiento completado. El mejor modelo es: **{best_model_name}**")
+    # else:
+        st.warning("Por favor, prepara los datos en la Pestaña 4 (Preparar el modelo) primero.")
+
+
+
+
+
+
+
 
 
 

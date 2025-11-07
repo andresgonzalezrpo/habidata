@@ -1,10 +1,35 @@
 import pandas as pd
+import numpy as np
 import os
 import io
 import matplotlib.pyplot as plt
 import seaborn as sns
 import math
 import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, roc_curve
+
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.linear_model import LinearRegression
+from sklearn.svm import SVR
+
+# Para preprocesamiento
+from sklearn.model_selection import train_test_split, GridSearchCV,cross_validate
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.impute import SimpleImputer
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+
+# Para modelado
+from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.svm import SVR
+
 
 
 
@@ -247,12 +272,220 @@ def preparar_datos():
 
     return data
 
-def entrenar_modelo():
+def preparar_modelo(data):
+    features = ['created_on','surface_total_final', 'bedrooms_final', 'bathrooms_final', 'l3_final', 'l4_final']
+    X = data[features]
+    y = data['price']
+
+    # Dividir en conjuntos de entrenamiento y prueba
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+   
+    # Identificar tipos de columnas
+    numeric_features = ['surface_total_final', 'bedrooms_final', 'bathrooms_final']
+    categorical_features = ['l3_final', 'l4_final']
+
+    # Crear transformadores para diferentes tipos de columnas
+    numeric_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='median')),
+        ('scaler', StandardScaler())
+    ])
+
+    categorical_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='most_frequent')),
+        ('onehot', OneHotEncoder(handle_unknown='ignore'))
+    ])
+
+    # Combinar transformadores usando ColumnTransformer
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', numeric_transformer, numeric_features),
+            ('cat', categorical_transformer, categorical_features)
+        ])
+    
+    return X_train, X_test, y_train, y_test, preprocessor
+
+def entrenar_evaluar_modelos(X_train, X_test, y_train, y_test, preprocessor):
+    """
+    Entrena varios modelos y evalúa su rendimiento.
+    
+    Args:
+        X_train, X_test, y_train, y_test: Conjuntos de datos de entrenamiento y prueba
+        preprocessor: Transformador de columnas para preprocesamiento
+        
+    Returns:
+        tuple: Mejor modelo, nombre del mejor modelo, resultados de todos los modelos
+    """
+
+    # Verificar la forma de los datos después del preprocesamiento
+    X_train_preprocessed = preprocessor.fit_transform(X_train)
+    print(f"Forma de X_train después del preprocesamiento: {X_train_preprocessed.shape}")
+
+    models = {
+    "Linear Regression": LinearRegression(),
+    "Decision Tree": DecisionTreeRegressor(random_state=42),
+    "Random Forest": RandomForestRegressor(random_state=42),
+    "Gradient Boosting": GradientBoostingRegressor(random_state=42),
+    "Support Vector Regressor": SVR()
+    }
+
+    """#Validación cruzada, comparación y resultados"""
+
+    # results = {}
+    # for name, model in models.items():
+    #     pipeline = Pipeline(steps=[('preprocessor', preprocessor),
+    #                              ('model', model)])
+    #     scores = cross_validate(pipeline, X_train, y_train,
+    #                             cv=5,
+    #                             scoring=('r2', 'neg_mean_absolute_error', 'neg_root_mean_squared_error'),
+    #                             return_train_score=True)
+    #     results[name] = {
+    #         'R2_mean': np.mean(scores['test_r2']),
+    #         'MAE_mean': -np.mean(scores['test_neg_mean_absolute_error']),
+    #         'RMSE_mean': -np.mean(scores['test_neg_root_mean_squared_error'])
+    #     }
+
+    # cv_results = pd.DataFrame(results).T.sort_values(by='R2_mean', ascending=False)
+    # print(cv_results)
+
+    # print("\nGenerando gráficos de resultados de CV...")
+    # fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(10, 10))
+    # plt.subplots_adjust(hspace=0.5) # Aumentar espacio entre subgráficos
+
+    # # Gráfico 1: R2_mean (Mayor es mejor)
+    # cv_results['R2_mean'].plot(kind='bar', ax=axes[0], color='skyblue')
+    # axes[0].set_title('R2 Promedio de Validación Cruzada (Mayor es Mejor)', fontsize=14)
+    # axes[0].set_ylabel('R2 Promedio')
+    # axes[0].set_xlabel('Modelo')
+    # axes[0].tick_params(axis='x', rotation=45)
+    # axes[0].grid(axis='y', linestyle='--', alpha=0.7)
+
+    # # Gráfico 2: MAE_mean y RMSE_mean (Menor es mejor)
+    # cv_results[['MAE_mean', 'RMSE_mean']].plot(kind='bar', ax=axes[1])
+    # axes[1].set_title('Error Promedio de Validación Cruzada (Menor es Mejor)', fontsize=14)
+    # axes[1].set_ylabel('Valor de Error')
+    # axes[1].set_xlabel('Modelo')
+
+    # # Usamos formato simple para las etiquetas del eje Y para evitar notación científica grande
+    # axes[1].ticklabel_format(style='plain', axis='y') 
+    # axes[1].tick_params(axis='x', rotation=45)
+    # axes[1].grid(axis='y', linestyle='--', alpha=0.7)
+
+    # plt.tight_layout()
+    # plt.show()
+
+
+    # """#Entrenar modelo final y evaluar en test con el mejor modelo que fue RandomForestRegressor:"""
+
+    best_model = Pipeline(steps=[('preprocessor', preprocessor),
+                                ('model', RandomForestRegressor(random_state=42))])
+
+    best_model.fit(X_train, y_train)
+    y_pred = best_model.predict(X_test)
+
+    # print("R2:", r2_score(y_test, y_pred))
+    # print("MAE:", mean_absolute_error(y_test, y_pred))
+    # print("RMSE:", mean_squared_error(y_test, y_pred))
+
+    return best_model
 
 
 
+    # # Definir modelos a evaluar
+    # models = {
+    #     'Regresión Logística': LogisticRegression(max_iter=1000, random_state=42),
+    #     'Árbol de Decisión': DecisionTreeClassifier(random_state=42),
+    #     'Random Forest': RandomForestClassifier(random_state=42),
+    #     'SVM': SVC(probability=True, random_state=42)
+    # }
+    
+    # # Crear pipelines para cada modelo
+    # pipelines = {}
+    # for name, model in models.items():
+    #     pipelines[name] = Pipeline(steps=[
+    #         ('preprocessor', preprocessor),
+    #         ('model', model)
+    #     ])
+    
+    # # Evaluar modelos con validación cruzada
+    # results = {}
+    # for name, pipeline in pipelines.items():
+    #     cv_scores = cross_val_score(pipeline, X_train, y_train, cv=5, scoring='accuracy')
+    #     results[name] = {
+    #         'cv_mean': cv_scores.mean(),
+    #         'cv_std': cv_scores.std()
+    #     }
+    #     print(f"{name}: Exactitud CV = {cv_scores.mean():.4f} (±{cv_scores.std():.4f})")
+    
+    # # Visualizar resultados de validación cruzada
+    # cv_means = [results[name]['cv_mean'] for name in models.keys()]
+    # cv_stds = [results[name]['cv_std'] for name in models.keys()]
+    
+    # plt.figure(figsize=(12, 6))
+    # plt.bar(models.keys(), cv_means, yerr=cv_stds, capsize=10)
+    # plt.title('Comparación de Modelos (Validación Cruzada)')
+    # plt.xlabel('Modelo')
+    # plt.ylabel('Exactitud Media')
+    # plt.ylim([0.7, 0.9])  # Ajustar según los resultados
+    # plt.grid(axis='y')
+    # plt.savefig('titanic_comparacion_modelos.png', dpi=300, bbox_inches='tight')
+    
+    # # Seleccionar el mejor modelo basado en validación cruzada
+    # best_model_name = max(results, key=lambda x: results[x]['cv_mean'])
+    # best_pipeline = pipelines[best_model_name]
+    # print(f"\nMejor modelo: {best_model_name} con exactitud CV de {results[best_model_name]['cv_mean']:.4f}")
+    
+    # # Entrenar el mejor modelo en todo el conjunto de entrenamiento
+    # best_pipeline.fit(X_train, y_train)
+    
+    # # Evaluar en el conjunto de prueba
+    # y_pred = best_pipeline.predict(X_test)
+    # y_pred_proba = best_pipeline.predict_proba(X_test)[:, 1]
+    
+    # # Métricas de rendimiento
+    # accuracy = accuracy_score(y_test, y_pred)
+    # precision = precision_score(y_test, y_pred)
+    # recall = recall_score(y_test, y_pred)
+    # f1 = f1_score(y_test, y_pred)
+    
+    # print("\nRendimiento en el conjunto de prueba:")
+    # print(f"Exactitud: {accuracy:.4f}")
+    # print(f"Precisión: {precision:.4f}")
+    # print(f"Exhaustividad: {recall:.4f}")
+    # print(f"F1-Score: {f1:.4f}")
+    
+    # # Matriz de confusión
+    # cm = confusion_matrix(y_test, y_pred)
+    # plt.figure(figsize=(8, 6))
+    # sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+    # plt.title('Matriz de Confusión')
+    # plt.xlabel('Predicción')
+    # plt.ylabel('Valor Real')
+    # plt.savefig('titanic_matriz_confusion.png', dpi=300, bbox_inches='tight')
+    
+    # # Curva ROC
+    # fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
+    # roc_auc = roc_auc_score(y_test, y_pred_proba)
+    
+    # plt.figure(figsize=(10, 8))
+    # plt.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC curve (area = {roc_auc:.2f})')
+    # plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+    # plt.xlim([0.0, 1.0])
+    # plt.ylim([0.0, 1.05])
+    # plt.xlabel('Tasa de Falsos Positivos')
+    # plt.ylabel('Tasa de Verdaderos Positivos')
+    # plt.title('Curva ROC')
+    # plt.legend(loc="lower right")
+    # plt.grid(True)
+    # plt.savefig('titanic_curva_roc.png', dpi=300, bbox_inches='tight')
+    
+    # # Informe de clasificación detallado
+    # print("\nInforme de Clasificación:")
+    # print(classification_report(y_test, y_pred))
+    
+    # return best_pipeline, best_model_name, results
+    
 
 
 
-
-
+    
