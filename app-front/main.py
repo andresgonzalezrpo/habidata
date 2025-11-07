@@ -34,16 +34,38 @@ def correlacion_variables(data, columnas_numericas):
     Calcula y visualiza la matriz de correlación para las variables numéricas especificadas.
     """
     correlaciones = data[columnas_numericas].corr()
+
+    # Definir la nueva ruta para guardar las imágenes
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    plots_dir = os.path.join(base_path, '..', 'plots')
+
+    # Crear el directorio si no existe
+    if not os.path.exists(plots_dir):
+        os.makedirs(plots_dir)
+
+    img_path = os.path.join(plots_dir, "matriz_correlacion.png")
+
     # Guardar la matriz de correlación como una imagen
     plt.figure(figsize=(10, 8))
     sns.heatmap(correlaciones, annot=True, cmap='coolwarm')
     plt.title('Matriz de Correlación')
-    plt.savefig('matriz_correlacion.png', dpi=300, bbox_inches='tight')
+    plt.savefig(img_path, dpi=300, bbox_inches='tight')
     plt.close()
+
+    print(f"Matriz de correlación guardada como {img_path}")
     return correlaciones
 
 def graficar_distribucion_numericas(data, columnas_numericas):
-    img_path = "boxplots_numericas.png"
+    # Definir la nueva ruta para guardar las imágenes
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    plots_dir = os.path.join(base_path, '..', 'plots')
+
+    # Crear el directorio si no existe
+    if not os.path.exists(plots_dir):
+        os.makedirs(plots_dir)
+
+    img_path = os.path.join(plots_dir, "boxplots_numericas.png")
+
     if not os.path.exists(img_path):
         n = len(columnas_numericas)
         ncols = 2 if n <= 4 else 3
@@ -72,8 +94,15 @@ def graficar_barrios(data):
         print(f"Advertencia: La columna '{columna}' no existe en el DataFrame.")
         return
 
-    # Definir la ruta de la imagen
-    img_path = "grafico_barrios_l4.png"
+    # Definir la nueva ruta para guardar las imágenes
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    plots_dir = os.path.join(base_path, '..', 'plots')
+
+    # Crear el directorio si no existe
+    if not os.path.exists(plots_dir):
+        os.makedirs(plots_dir)
+
+    img_path = os.path.join(plots_dir, "grafico_barrios_l4.png")
 
     # Verificar si la imagen ya existe
     if os.path.exists(img_path):
@@ -134,19 +163,91 @@ def explorar_datos(data):
 def preparar_datos():
     # Construye la ruta absoluta al archivo CSV
     base_path = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(base_path, '..', 'data', 'properties_gold.csv')
+    file_path = os.path.join(base_path, '..', 'data', 'properties_final.csv')
     try:
-        data = pd.read_csv(file_path)
-        # Filtrar filas con valores nulos en columnas críticas
-        data= data.dropna(subset=['created_on', 'price', 'surface_total_final', 'bedrooms_final', 'bathrooms_final', 'l3_final', 'l4_final']).copy()        
-        data.to_csv('../data/properties_final.csv', index=False)
+        data = pd.read_csv(file_path)       
         print("Datos cargados correctamente desde archivo local.")
     except FileNotFoundError:
         print("Archivo no encontrado.")
         # Aquí podrías descargar o crear un DataFrame vacío
         data = pd.DataFrame()
-    print(data.columns)
+    """#Eliminación de outliers de precio"""
+    Q1 = data['price'].quantile(0.25)
+    Q3 = data['price'].quantile(0.75)
+    IQR = Q3 - Q1
+
+    # Filtrar datos dentro de 1.5*IQR del rango intercuartílico
+    data = data[(data['price'] >= Q1 - 1.5 * IQR) & (data['price'] <= Q3 + 1.5 * IQR)]
+
+    # Gráfico de dispersión de precios",
+    plots_dir = os.path.join(base_path, '..', 'plots')
+
+    # Crear el directorio si no existe
+    if not os.path.exists(plots_dir):
+        os.makedirs(plots_dir)
+
+    img_path = os.path.join(plots_dir, "boxplot_precios_sin_outliers.png")
+
+    # Verificar si la imagen ya existe
+    if not os.path.exists(img_path):
+        plt.figure(figsize=(10, 6))
+        sns.boxplot(x=data['price'].dropna())
+        plt.title('Boxplot de precios de propiedades')
+        plt.xlabel('Precio')
+        plt.grid(True)
+        plt.savefig(img_path, dpi=300, bbox_inches='tight')
+        plt.close()
+
+        print(f"Boxplot guardado como {img_path}")
+    else:
+        print(f"El boxplot ya existe: {img_path}")
+
+    # Definición del límite
+    LIMITE_SUPERIOR = 2000
+
+
+    # 1. Aplicar la eliminación de valores superiores
+    # La condición mantiene los valores <= 1000
+    data = data[data['surface_total_final'] <= LIMITE_SUPERIOR]
+
+    # 2. Resumen de la eliminación
+    registros_eliminados = data.shape[0] - data.shape[0]
+
+    print(f"--- Eliminación de {'surface_total_final'} ---")
+    print(f"Límite aplicado: {'surface_total_final'} > {LIMITE_SUPERIOR}")
+    print(f"Tamaño original del DataFrame: {data.shape[0]} filas")
+    print(f"Tamaño del DataFrame después de filtrar: {data.shape[0]} filas")
+    print(f"Registros eliminados: {registros_eliminados} filas")
+
+    # 3. Gráfico de dispersión para verificar el resultado
+    plots_dir = os.path.join(base_path, '..', 'plots')
+
+    # Crear el directorio si no existe
+    if not os.path.exists(plots_dir):
+        os.makedirs(plots_dir)
+
+    img_path = os.path.join(plots_dir, "dispersión_surface_total_final.png")
+
+    # Verificar si la imagen ya existe
+    if not os.path.exists(img_path):
+        plt.figure(figsize=(10, 6))
+        plt.scatter(range(len(data)), data['surface_total_final'], alpha=0.6)
+        plt.title(f'Dispersión de surface_total_final (Valores > {LIMITE_SUPERIOR} Eliminados)')
+        plt.xlabel('Índice de muestra')
+        plt.ylabel('surface_total_final')
+        plt.grid(True)
+        plt.savefig(img_path, dpi=300, bbox_inches='tight')
+        plt.close()
+
+        print(f"Gráfico de dispersión guardado como {img_path}")
+    else:
+        print(f"El gráfico de dispersión ya existe: {img_path}")
+           
+
+
     return data
+
+def entrenar_modelo():
 
 
 

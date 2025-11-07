@@ -101,13 +101,14 @@ with tab2:
                 st.markdown("**Columnas categóricas:**<br>" + ", ".join(df_explorado['Columnas categóricas']), unsafe_allow_html=True)
                 # Distribución de variables númericas
                 st.subheader("Distribución de variables numéricas")
-                st.image("boxplots_numericas.png", caption="Distribución de variables numéricas")
+                plots_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plots')
+                st.image(os.path.join(plots_dir, "boxplots_numericas.png"), caption="Distribución de variables numéricas")
                 # correlaciones entre variables numéricas
                 st.subheader("Matriz de correlación entre variables numéricas")
-                st.image('matriz_correlacion.png', caption='Matriz de correlación')    
+                st.image(os.path.join(plots_dir, 'matriz_correlacion.png'), caption='Matriz de correlación')    
                 # histograma de la variable objetivo
                 st.subheader("Histograma de barrios")
-                st.image("grafico_barrios_l4.png", caption="Cantidad de datos por barrio")
+                st.image(os.path.join(plots_dir, "grafico_barrios_l4.png"), caption="Cantidad de datos por barrio")
                
 
                 
@@ -618,23 +619,44 @@ with tab3:
 
 # --- Pestaña 3: Preparación de Datos ---
 with tab4:
-    st.header("Paso 3: Preparar los Datos para el Modelo")
-    if st.session_state.data is not None:
+    st.header("Paso 3: Preparar los Datos para el Modelo")   
+    
+    with st.spinner("Cargando datos..."):
+        st.session_state.prepared_data = preparar_datos()
+        data = st.session_state.prepared_data
+    st.success("¡Datos cargados exitosamente!")
+    st.dataframe(st.session_state.prepared_data.head())
+
+
+    if st.session_state.prepared_data is not None:
         if st.button("Preparar Datos"):
-            with st.spinner("Dividiendo y preprocesando los datos..."):
-                X_train, X_test, y_train, y_test, preprocessor = preparar_datos(st.session_state.data)
+            # graficar boxplot de la variable objetivo sin outliers
+            plots_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plots')
+            st.subheader("Limpieza de outliers en la variable objetivo (precio)")
+            st.image(os.path.join(plots_dir, "boxplot_precios_sin_outliers.png"), caption="Boxplot de precios de propiedades")
+
+            st.subheader("Limpieza de outliers en el área total")
+            st.image(os.path.join(plots_dir, "dispersión_surface_total_final.png"), caption="Dispersión de superficie total final")
+
+
+
+
+
+
+    #         with st.spinner("Dividiendo y preprocesando los datos..."):
+    #             X_train, X_test, y_train, y_test, preprocessor = preparar_datos(st.session_state.prepared_data)
+
+    #             # Guardamos los resultados en el estado de la sesión
+    #             st.session_state.prepared_data = (X_train, X_test, y_train, y_test)
+    #             st.session_state.preprocessor = preprocessor
                 
-                # Guardamos los resultados en el estado de la sesión
-                st.session_state.prepared_data = (X_train, X_test, y_train, y_test)
-                st.session_state.preprocessor = preprocessor
-                
-                st.success("Datos preparados exitosamente.")
-                st.info(f"Tamaño del conjunto de entrenamiento: {X_train.shape[0]} muestras")
-                st.info(f"Tamaño del conjunto de prueba: {X_test.shape[0]} muestras")
-                st.write("Vista previa de los datos de entrenamiento (X_train):")
-                st.dataframe(X_train.head())
-    else:
-        st.warning("Por favor, carga los datos en la Pestaña 1 (Cargar Datos) primero.")
+    #             st.success("Datos preparados exitosamente.")
+    #             st.info(f"Tamaño del conjunto de entrenamiento: {X_train.shape[0]} muestras")
+    #             st.info(f"Tamaño del conjunto de prueba: {X_test.shape[0]} muestras")
+    #             st.write("Vista previa de los datos de entrenamiento (X_train):")
+    #             st.dataframe(X_train.head())
+    # else:
+    #     st.warning("Por favor, carga los datos en la Pestaña 1 (Cargar Datos) primero.")
 
       
 
