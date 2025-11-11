@@ -13,7 +13,8 @@ try:
        explorar_datos,
        preparar_datos,
        preparar_modelo,
-       entrenar_evaluar_modelos
+       entrenar_evaluar_modelos,
+       predecir_precio_vivienda
     )
 except ImportError:
     st.error("Error: no se cargaron los datos correctamente")
@@ -628,8 +629,8 @@ with tab4:
     with st.spinner("Cargando datos..."):
         st.session_state.prepared_data = preparar_datos()
         data = st.session_state.prepared_data
-    st.success("¡Datos cargados exitosamente!")
-    st.dataframe(st.session_state.prepared_data.head())
+    #st.success("¡Datos cargados exitosamente!")
+    #st.dataframe(st.session_state.prepared_data.head())
 
 
     if st.session_state.prepared_data is not None:
@@ -657,7 +658,7 @@ with tab4:
             st.dataframe(X_train.head())
 
 with tab5:
-    st.header("Paso 4: Entrenar y Evaluar Múltiples Modelos")
+    st.header("Paso 5: Entrenar y Evaluar Múltiples Modelos")
     if st.session_state.prepared_model is not None:
         if st.button("Entrenar y Evaluar Modelos"):
             with st.spinner("Entrenando modelos y evaluando... Esto puede tardar un momento."):
@@ -665,91 +666,175 @@ with tab5:
                 preprocessor = st.session_state.preprocessor               
 
                 best_model = entrenar_evaluar_modelos(X_train, X_test, y_train, y_test, preprocessor)
-                
-                
-    #             st.subheader("Resultados de la Validación Cruzada")
-                
-    #             st.image('titanic_comparacion_modelos.png', caption='Comparación de Modelos')
+                # Resultados de los modelos
+                st.subheader("Resultados de Validación Cruzada")
 
-    #             st.subheader(f"Rendimiento del Mejor Modelo ({best_model_name}) en el Conjunto de Prueba")
-    #             st.text('Rendimiento en el conjunto de prueba:' + captured_output.getvalue().split('Rendimiento en el conjunto de prueba:')[1])
-                
-    #             col1, col2 = st.columns(2)
-    #             with col1:
-    #                 st.image('titanic_matriz_confusion.png', caption='Matriz de Confusión')
-    #             with col2:
-    #                 st.image('titanic_curva_roc.png', caption='Curva ROC')
+                # Crear DataFrame con los resultados
+                resultados = {
+                    "Modelo": [
+                        "Random Forest",
+                        "Decision Tree",
+                        "Gradient Boosting",
+                        "Linear Regression",
+                        "Support Vector Regressor"
+                    ],
+                    "R2_mean": [
+                        0.843147,
+                        0.795640,
+                        0.781758,
+                        0.701599,
+                        -0.058193
+                    ],
+                    "MAE_mean": [
+                        43344700,
+                        44768540,
+                        62318070,
+                        70768440,
+                        140069600
+                    ],
+                    "RMSE_mean": [
+                        72722650,
+                        83012630,
+                        85812780,
+                        100312600,
+                        189028200
+                    ]
+                }
 
-    #             # Guardamos el mejor modelo
-    #             st.session_state.best_model = best_pipeline
-    #             st.session_state.model_name = best_model_name
-    #             st.success(f"Entrenamiento completado. El mejor modelo es: **{best_model_name}**")
-    # else:
+                df_resultados = pd.DataFrame(resultados)
+
+                # Mostrar tabla con estilo
+                st.dataframe(
+                    df_resultados.style.format({
+                        "R2_mean": "{:.6f}",
+                        "MAE_mean": "{:,}",
+                        "RMSE_mean": "{:,}"
+                    }).highlight_max(axis=0, subset=["R2_mean"], color="lightgreen")
+                )
+
+                plots_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plots')
+                st.image(os.path.join(plots_dir, "r2_mean_plot.png"), caption="Error del promedio r2")
+
+                st.image(os.path.join(plots_dir, "mae_rmse_mean_plot.png"), caption="Error del promedio MAE Y RMSE")
+
+    
+                # Guardamos el mejor modelo
+                st.session_state.best_model = best_model
+                st.session_state.model_name = "Random Forest Regressor"
+                st.success(f"Entrenamiento completado. El mejor modelo es: **{st.session_state.model_name}**")
+
+                # Datos para la gráfica
+                hiperparametros = {
+                    'Métrica': ['Mejor score (R2)', 'R2 (test)', 'MAE (test)', 'RMSE (test)'],
+                    'Valor': [0.8434188833882883, 0.8436063284766978, 42487513.483914204, 5253572023866604.0]
+                }
+
+                df_hiperparametros = pd.DataFrame(hiperparametros)
+                st.subheader("Modelo mejorado con hipermarámetros")
+                st.dataframe(df_hiperparametros)
+
+                
+    else:
         st.warning("Por favor, prepara los datos en la Pestaña 4 (Preparar el modelo) primero.")
 
+with tab6:
+    st.header("Paso 6: Interpretación del Modelo")
+    if st.session_state.best_model is not None:
+        if st.button("Interpretar Modelo"):
+            with st.spinner("Interpretando el modelo..."):
+                best_model = st.session_state.best_model
+                model_name = st.session_state.model_name
+                #interpretar_modelo(best_model, model_name)
+    else:
+        st.warning("Por favor, entrena los modelos en la Pestaña 5 (Entrenar y Evaluar Múltiples Modelos) primero.")
+
+with tab7:
+    # --- Pestaña 7: Interpretación del Modelo / Simulación Real de Predicción ---
+
+    st.header("Paso 7: Simular y Realizar una Predicción de Precio")
+
+    # Verificamos que el modelo esté cargado correctamente en la sesión
+    if st.session_state.best_model is not None:
+        st.info("Completa el siguiente formulario para ingresar los datos del inmueble y obtener la predicción del modelo entrenado.")
+
+        # --- Formulario de ingreso de datos ---
+        with st.form("prediction_form"):
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                superficie_ej = st.number_input(
+                    "Superficie Total (m²)",
+                    min_value=0.0, max_value=10000.0, value=192.0, step=0.1, format="%.2f"
+                )
+                dormitorios_ej = st.number_input(
+                    "Dormitorios",
+                    min_value=0, max_value=20, value=5, step=1
+                )
+
+            with col2:
+                banos_ej = st.number_input(
+                    "Baños",
+                    min_value=0, max_value=10, value=2, step=1
+                )
+                localidad_l3_ej = st.text_input(
+                    "Barrio / Localidad (L3)",
+                    value="Medellin"
+                )
+
+            with col3:
+                localidad_l4_ej = st.text_input(
+                    "Sub-Barrio / Zona (L4)",
+                    value="Doce de Octubre"
+                )
+
+            submit_button = st.form_submit_button(label="Predecir Precio")
+
+        # --- Si el usuario envía el formulario ---
+        if submit_button:
+            st.subheader("🔍 Datos Ingresados")
+            datos_usuario = pd.DataFrame({
+                "Superficie (m²)": [superficie_ej],
+                "Dormitorios": [dormitorios_ej],
+                "Baños": [banos_ej],
+                "Barrio (L3)": [localidad_l3_ej],
+                "Sub-Barrio (L4)": [localidad_l4_ej],
+            })
+            st.dataframe(datos_usuario, use_container_width=True)
+
+            try:
+                with st.spinner("Calculando predicción..."):
+                    # Usamos el modelo cargado en sesión
+                    modelo_cargado = st.session_state.best_model
+
+                    # Llamamos a la función de predicción
+                    precio_predicho = predecir_precio_vivienda(
+                        superficie_ej,
+                        dormitorios_ej,
+                        banos_ej,
+                        localidad_l3_ej,
+                        localidad_l4_ej,
+                        modelo_cargado
+                    )
+
+                # --- Mostrar resultados ---
+                st.subheader("💰 Resultado de la Predicción")
+                st.success(f"*Precio estimado: ${precio_predicho:,.2f}*")
+
+                st.info(f"""
+                *Resumen del Inmueble:*
+                - 📐 Superficie Total: {superficie_ej} m²
+                - 🛏 Dormitorios: {dormitorios_ej}
+                - 🚿 Baños: {banos_ej}
+                - 📍 Barrio: {localidad_l3_ej}
+                - 🏘 Sub-Barrio: {localidad_l4_ej}
+                """)
+                st.balloons()
+
+            except Exception as e:
+                st.error(f"⚠ Ocurrió un error durante la predicción: {e}")
+
+    else:
+        st.warning("Por favor, prepara los datos en la Pestaña 6 (interpretar el modelo) primero.")
 
 
-
-
-
-
-
-
-
-
-
-
-# --- Pestaña 3: Preparación de Datos ---
-# with tab3:
-#     st.header("Paso 3: Preparar los Datos para el Modelo")
-#     if st.session_state.data is not None:
-#         if st.button("Preparar Datos"):
-#             with st.spinner("Dividiendo y preprocesando los datos..."):
-#                 st.markdown(
-#                     """
-# **Proceso de limpieza y preparación de la data:**
-
-# 1. **Filtro por Antioquia:** Se seleccionan solo los registros correspondientes al departamento de Antioquia.
-# 2. **Limpieza de datos con coordenadas fuera de Antioquia:** Se eliminan registros con coordenadas geográficas incorrectas.
-# 3. **Limpieza de valores inválidos:** Se corrigen o eliminan datos inconsistentes.
-# 4. **Eliminar columnas con 0 registros (l5 y l6):** Se eliminan columnas vacías.
-# 5. **Filtrar solo valores en pesos colombianos:** Se conservan solo los registros con precios en COP.
-# 6. **Filtrar por tipos de propiedad:** Solo se incluyen Apartamentos y Casas.
-# 7. **Eliminación de la columna Rooms:** Se elimina por ser idéntica a bedrooms.
-# 8. **Filtrar solo propiedades en venta:** Se eliminan registros de arriendo o arriendo temporal.
-# 9. **Recuperación de Área desde la columna descripción:** Se extrae el área en m² desde el texto.
-# 10. **Recuperación de # de baños y # de bedrooms desde la columna descripción:** Se extraen estos valores desde el texto.
-# 11. **Recuperación de ubicaciones como barrios y ciudades desde la columna descripción y titles:** Se extraen ubicaciones relevantes desde los textos descriptivos.
-#                     """,
-#                     unsafe_allow_html=True
-#                 )
-#                 st.subheader("dataframe preparado")
-#                 df_preparado = preparar_datos()
-
-                
-#                 st.dataframe(df_preparado.head())
-#                 st.subheader("Cantidad de registros")
-#                 # Mostrar cantidad de registros
-#                 st.write(
-#                     f"Registros: {df_preparado.shape[0]}, "
-#                     f"Columnas: {df_preparado.shape[1]}"
-#                 )
-#                 st.dataframe(info_as_dataframe(df_preparado))
-#                 st.session_state.data = df_preparado
-
-
-
-#                 # X_train, X_test, y_train, y_test, preprocessor = preparar_datos(st.session_state.data)
-                
-#                 # # Guardamos los resultados en el estado de la sesión
-#                 # st.session_state.prepared_data = (X_train, X_test, y_train, y_test)
-#                 # st.session_state.preprocessor = preprocessor
-                
-#                 # st.success("Datos preparados exitosamente.")
-#                 # st.info(f"Tamaño del conjunto de entrenamiento: {X_train.shape[0]} muestras")
-#                 # st.info(f"Tamaño del conjunto de prueba: {X_test.shape[0]} muestras")
-#                 # st.write("Vista previa de los datos de entrenamiento (X_train):")
-#                 # st.dataframe(X_train.head())
-#     else:
-#         st.warning("Por favor, carga los datos en la Pestaña 1 (Cargar Datos) primero.")
 

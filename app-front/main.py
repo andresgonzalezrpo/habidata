@@ -215,7 +215,7 @@ def preparar_datos():
 
     # Verificar si la imagen ya existe
     if not os.path.exists(img_path):
-        plt.figure(figsize=(10, 6))
+        plt.figure(figsize=(6, 3))
         sns.boxplot(x=data['price'].dropna())
         plt.title('Boxplot de precios de propiedades')
         plt.xlabel('Precio')
@@ -255,7 +255,7 @@ def preparar_datos():
 
     # Verificar si la imagen ya existe
     if not os.path.exists(img_path):
-        plt.figure(figsize=(10, 6))
+        plt.figure(figsize=(6, 3))
         plt.scatter(range(len(data)), data['surface_total_final'], alpha=0.6)
         plt.title(f'Dispersión de surface_total_final (Valores > {LIMITE_SUPERIOR} Eliminados)')
         plt.xlabel('Índice de muestra')
@@ -331,50 +331,7 @@ def entrenar_evaluar_modelos(X_train, X_test, y_train, y_test, preprocessor):
 
     """#Validación cruzada, comparación y resultados"""
 
-    # results = {}
-    # for name, model in models.items():
-    #     pipeline = Pipeline(steps=[('preprocessor', preprocessor),
-    #                              ('model', model)])
-    #     scores = cross_validate(pipeline, X_train, y_train,
-    #                             cv=5,
-    #                             scoring=('r2', 'neg_mean_absolute_error', 'neg_root_mean_squared_error'),
-    #                             return_train_score=True)
-    #     results[name] = {
-    #         'R2_mean': np.mean(scores['test_r2']),
-    #         'MAE_mean': -np.mean(scores['test_neg_mean_absolute_error']),
-    #         'RMSE_mean': -np.mean(scores['test_neg_root_mean_squared_error'])
-    #     }
-
-    # cv_results = pd.DataFrame(results).T.sort_values(by='R2_mean', ascending=False)
-    # print(cv_results)
-
-    # print("\nGenerando gráficos de resultados de CV...")
-    # fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(10, 10))
-    # plt.subplots_adjust(hspace=0.5) # Aumentar espacio entre subgráficos
-
-    # # Gráfico 1: R2_mean (Mayor es mejor)
-    # cv_results['R2_mean'].plot(kind='bar', ax=axes[0], color='skyblue')
-    # axes[0].set_title('R2 Promedio de Validación Cruzada (Mayor es Mejor)', fontsize=14)
-    # axes[0].set_ylabel('R2 Promedio')
-    # axes[0].set_xlabel('Modelo')
-    # axes[0].tick_params(axis='x', rotation=45)
-    # axes[0].grid(axis='y', linestyle='--', alpha=0.7)
-
-    # # Gráfico 2: MAE_mean y RMSE_mean (Menor es mejor)
-    # cv_results[['MAE_mean', 'RMSE_mean']].plot(kind='bar', ax=axes[1])
-    # axes[1].set_title('Error Promedio de Validación Cruzada (Menor es Mejor)', fontsize=14)
-    # axes[1].set_ylabel('Valor de Error')
-    # axes[1].set_xlabel('Modelo')
-
-    # # Usamos formato simple para las etiquetas del eje Y para evitar notación científica grande
-    # axes[1].ticklabel_format(style='plain', axis='y') 
-    # axes[1].tick_params(axis='x', rotation=45)
-    # axes[1].grid(axis='y', linestyle='--', alpha=0.7)
-
-    # plt.tight_layout()
-    # plt.show()
-
-
+    
     # """#Entrenar modelo final y evaluar en test con el mejor modelo que fue RandomForestRegressor:"""
 
     best_model = Pipeline(steps=[('preprocessor', preprocessor),
@@ -383,11 +340,26 @@ def entrenar_evaluar_modelos(X_train, X_test, y_train, y_test, preprocessor):
     best_model.fit(X_train, y_train)
     y_pred = best_model.predict(X_test)
 
-    # print("R2:", r2_score(y_test, y_pred))
-    # print("MAE:", mean_absolute_error(y_test, y_pred))
-    # print("RMSE:", mean_squared_error(y_test, y_pred))
+
 
     return best_model
+
+def predecir_precio_vivienda(superficie, dormitorios, banos, localidad_l3, localidad_l4, modelo_optimizado):
+    """
+    Realiza una predicción del precio de la vivienda usando el modelo Random Forest optimizado.
+    """
+    data_input = pd.DataFrame({
+        'created_on': [pd.to_datetime('2024-01-01')],
+        'surface_total_final': [superficie],
+        'bedrooms_final': [dormitorios],
+        'bathrooms_final': [banos],
+        'l3_final': [localidad_l3],
+        'l4_final': [localidad_l4]
+    })
+
+    # Predicción
+    prediccion = modelo_optimizado.predict(data_input)
+    return prediccion[0]
 
 
 
