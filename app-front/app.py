@@ -53,8 +53,9 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "3. Limpieza",
     "4. Preparación",
     "5. Entrenamiento",
-    "6. Interpretación",
-    "7. Predicción"
+    "6. Predicción",
+    "7. Interpretación",
+    
 ])
 
 # --- Pestaña 1: Carga de Datos ---
@@ -737,27 +738,98 @@ with tab5:
     else:
         st.warning("Por favor, prepara los datos en la Pestaña 4 (Preparar el modelo) primero.")
 
+
 with tab6:
-    st.header("Paso 6: Interpretación del Modelo")
-    if st.session_state.best_model is not None:
-        if st.button("Interpretar Modelo"):
-            with st.spinner("Interpretando el modelo..."):
-                best_model = st.session_state.best_model
-                model_name = st.session_state.model_name
-                #interpretar_modelo(best_model, model_name)
-    else:
-        st.warning("Por favor, entrena los modelos en la Pestaña 5 (Entrenar y Evaluar Múltiples Modelos) primero.")
-
-with tab7:
-    # --- Pestaña 7: Interpretación del Modelo / Simulación Real de Predicción ---
-
-    st.header("Paso 7: Simular y Realizar una Predicción de Precio")
+    st.header("Paso 6: Simular y Realizar una Predicción de Precio")
 
     # Verificamos que el modelo esté cargado correctamente en la sesión
     if st.session_state.best_model is not None:
         st.info("Completa el siguiente formulario para ingresar los datos del inmueble y obtener la predicción del modelo entrenado.")
 
-        # --- Formulario de ingreso de datos ---
+        # MAPEO: Relación entre ciudades (L3) y sus barrios (L4)
+        # Aquí debes completar con tus datos reales
+        mapeo_l3_l4 = {
+            'Medellin': ['Alfonso López', 'Altavista', 'Aranjuez', 'Bellavista', 'Belén', 
+                            'Buenos Aires', 'Calasanz', 'Calatrava', 'Campo Amor', 'Candelaria', 
+                            'Castilla', 'Cristo Rey', 'Doce de Octubre', 'El Poblado', 'El Salado', 
+                            'Estadio', 'Guayabal', 'La América', 'La Candelaria', 'Laureles', 
+                            'Manrique', 'Robledo'],
+            'Bello': ['Cabañas', 'Fontidueño', 'Niquía', 'La Frontera'],
+            'Envigado': ['El Dorado', 'El Pedrero', 'La Magnolia', 'Zuniga'],
+            'Itagui': ['Ditaires', 'Fátima', 'Loma de Los Bernal', 'Los Colores'],
+            'Sabaneta': ['Holanda', 'Las Palmas', 'María Auxiliadora'],
+            'La Estrella': ['La Tablaza', 'El Pedrero'],
+            'Rionegro': ['El Porvenir', 'La Doctora', 'La Estación'],
+            'Copacabana': ['La Pilarica', 'La Misericordia','Jardines'],
+            'Caldas': ['La Floresta', 'Jardines'],
+            'Retiro': ['Los Alpes', 'Los Lagos'],
+            'Barbosa': ['Castropol', 'Kennedy'],
+            'Girardota': ['Manila', 'Machado'],
+            'La Ceja': ['Mayorca'],
+            # Añade el resto de ciudades con sus barrios correspondientes
+            # Si una ciudad no tiene barrios específicos en tu dataset, deja lista vacía
+        }
+
+        # Lista completa de todas las opciones L3 (ciudades) en orden alfabético
+        opciones_l3 = [
+            'Abejorral', 'Alejandría', 'Amalfi', 'Andes', 'Apartadó', 'Barbosa',
+            'Bello', 'Betania', 'Caldas', 'Carepa', 'Caucasia', 'Chigorodó',
+            'Ciudad Bolívar', 'Cocorná', 'Concepción', 'Concordia', 'Copacabana',
+            'Ebéjico', 'El Carmen de Viboral', 'Envigado', 'Fredonia', 'Giraldo',
+            'Girardota', 'Guarne', 'Guatapé', 'Hispania', 'Itagui', 'Jardín',
+            'Jericó', 'La Ceja', 'La Estrella', 'La Pintada', 'La Unión',
+            'Marinilla', 'Medellín', 'Necoclí', 'Olaya', 'Peñol', 'Puerto Triunfo',
+            'Remedios', 'Retiro', 'Rionegro', 'Sabaneta', 'San Francisco',
+            'San Jerónimo', 'San Pedro de los Milagros', 'San Rafael', 'San Roque',
+            'San Vicente', 'Santafé de Antioquia', 'Segovia', 'Sopetrán',
+            'Titiribí', 'Turbo', 'Urrao', 'Venecia', 'Yarumal'
+        ]
+
+        # Lista completa de todas las opciones L3 (ciudades)
+        opciones_l3 = list(mapeo_l3_l4.keys())
+
+        # --- ELEMENTOS FUERA DEL FORMULARIO para permitir actualización dinámica ---
+        st.markdown("### 📍 Ubicación del Inmueble")
+
+        col_a, col_b = st.columns(2)
+
+        with col_a:
+            # Selectbox de ciudad (L3) - FUERA del formulario
+            localidad_l3_ej = st.selectbox(
+                "Ciudad / Municipio (L3)",
+                options=opciones_l3,
+                index=opciones_l3.index("Medellín") if "Medellín" in opciones_l3 else 0,
+                help="Selecciona la ciudad",
+                key="select_l3"
+            )
+
+        with col_b:
+            # Filtrar barrios según la ciudad seleccionada
+            barrios_disponibles = mapeo_l3_l4.get(localidad_l3_ej, [])
+
+            # Si no hay barrios específicos, mostrar mensaje
+            if len(barrios_disponibles) == 0:
+                st.info(f"ℹ No hay barrios específicos registrados para {localidad_l3_ej}")
+                localidad_l4_ej = "Sin especificar"
+                st.text_input(
+                    "Sub-Barrio / Zona (L4)",
+                    value="Sin especificar",
+                    disabled=True,
+                    key="select_l4_disabled"
+                )
+            else:
+                # Selectbox de barrio (L4) - FUERA del formulario
+                localidad_l4_ej = st.selectbox(
+                    "Barrio / Zona (L4)",
+                    options=barrios_disponibles,
+                    index=0,
+                    help="Selecciona el barrio (actualizado según la ciudad)",
+                    key="select_l4"
+                )
+
+        # --- FORMULARIO para el resto de datos y el botón de predicción ---
+        st.markdown("### 🏠 Características del Inmueble")
+
         with st.form("prediction_form"):
             col1, col2, col3 = st.columns(3)
 
@@ -766,38 +838,32 @@ with tab7:
                     "Superficie Total (m²)",
                     min_value=0.0, max_value=10000.0, value=192.0, step=0.1, format="%.2f"
                 )
+
+            with col2:
                 dormitorios_ej = st.number_input(
                     "Dormitorios",
                     min_value=0, max_value=20, value=5, step=1
                 )
 
-            with col2:
+            with col3:
                 banos_ej = st.number_input(
                     "Baños",
                     min_value=0, max_value=10, value=2, step=1
                 )
-                localidad_l3_ej = st.text_input(
-                    "Barrio / Localidad (L3)",
-                    value="Medellin"
-                )
 
-            with col3:
-                localidad_l4_ej = st.text_input(
-                    "Sub-Barrio / Zona (L4)",
-                    value="Doce de Octubre"
-                )
-
-            submit_button = st.form_submit_button(label="Predecir Precio")
+            submit_button = st.form_submit_button(label="🔮 Predecir Precio", use_container_width=True)
 
         # --- Si el usuario envía el formulario ---
         if submit_button:
+            st.markdown("---")
             st.subheader("🔍 Datos Ingresados")
+            
             datos_usuario = pd.DataFrame({
                 "Superficie (m²)": [superficie_ej],
                 "Dormitorios": [dormitorios_ej],
                 "Baños": [banos_ej],
-                "Barrio (L3)": [localidad_l3_ej],
-                "Sub-Barrio (L4)": [localidad_l4_ej],
+                "Ciudad (L3)": [localidad_l3_ej],
+                "Barrio (L4)": [localidad_l4_ej],
             })
             st.dataframe(datos_usuario, use_container_width=True)
 
@@ -818,23 +884,91 @@ with tab7:
 
                 # --- Mostrar resultados ---
                 st.subheader("💰 Resultado de la Predicción")
-                st.success(f"*Precio estimado: ${precio_predicho:,.2f}*")
+                st.success(f"*Precio estimado en el año 2021: ${precio_predicho:,.2f}*")
 
                 st.info(f"""
                 *Resumen del Inmueble:*
                 - 📐 Superficie Total: {superficie_ej} m²
                 - 🛏 Dormitorios: {dormitorios_ej}
                 - 🚿 Baños: {banos_ej}
-                - 📍 Barrio: {localidad_l3_ej}
-                - 🏘 Sub-Barrio: {localidad_l4_ej}
+                - 🏙 Ciudad: {localidad_l3_ej}
+                - 🏘 Barrio: {localidad_l4_ej}
                 """)
-                st.balloons()
 
             except Exception as e:
                 st.error(f"⚠ Ocurrió un error durante la predicción: {e}")
 
     else:
-        st.warning("Por favor, prepara los datos en la Pestaña 6 (interpretar el modelo) primero.")
+        st.warning("Por favor, carga los datos en la Pestaña 5 (entrenamiento) primero.")
+with tab7:
+    st.header("Paso 7: Interpretación del Modelo")
+    
+    if st.button("Interpretar Modelo"):
+        with st.spinner("Interpretando el modelo..."):
+            best_model = st.session_state.best_model
+            model_name = st.session_state.model_name
+            
+            # Mostrar métricas del modelo
+            st.subheader("Evaluación Final del Modelo Optimizado:")
+            st.markdown("El modelo optimizado que en nuestro caso fue: **RandomForestRegressor** se evaluó en el conjunto de Prueba, datos que nunca se utilizaron en el entrenamiento o la validación.")
+            st.text("")
+            metrics_data = {
+                "Métrica": ["R2", "MAE", "RMSE"],
+                "Valor": [
+                    "0.8436063284766978", 
+                    "${:,.2f}".format(42487513.483914204), 
+                    "${:,.2f}".format(5253572023866604.0)
+                ]
+            }
+            metrics_df = pd.DataFrame(metrics_data)
+            st.table(metrics_df)
+
+            st.subheader("Predicción del Mejor Modelo")
+            st.markdown("Se implementó una función para usar el modelo optimizado **(best_model)** y predecir el precio de una vivienda, simulando la entrada de datos de un usuario.")
+            # Datos para la tabla
+            data = {
+                "Característica": [
+                    "Superficie Total", 
+                    "Dormitorios", 
+                    "Baños", 
+                    "Municipio (L3)", 
+                    "Barrio (L4)"
+                ],
+                "Valor": [
+                    "260.36 m²", 
+                    "5", 
+                    "1", 
+                    "Copacabana", 
+                    "Jardines"
+                ]
+            }
+
+            # Crear un DataFrame
+            df = pd.DataFrame(data)
+
+            # Mostrar la tabla en Streamlit
+            st.table(df)
+            st.markdown("Resultado de la Predicción:")
+            st.markdown("El Precio Predicho de la Vivienda es: **$421,392,604.28**")
+
+                            
+
+            st.markdown("""
+            # Resumen del Proyecto
+            
+            ### **Valor de la Preparación de Datos**
+            El proceso de limpieza, especialmente la **Extracción por Text Mining** para recuperar datos de área y ubicación, fue crucial. Esto demuestra que el **80% del éxito en Ciencia de Datos** radica en tener información completa y de alta calidad.
+
+            ### **Impacto de la Ubicación**
+            El uso de las variables categóricas **l3_final** (municipio) y **l4_final** (barrio) dentro del modelo, mediante **One-Hot Encoding**, permitió al algoritmo capturar el valor marginal de la localización, el cual es un factor determinante en el precio inmobiliario.
+
+            ### **Modelo Robusto**
+            La **Validación Cruzada** confirmó la solidez del modelo Random Forest frente a otros, asegurando que el rendimiento reportado no es un golpe de suerte, sino una métrica estable y confiable.
+                        
+            ### **Alto Poder Predictivo**
+            El proyecto logró desarrollar un modelo (**Random Forest**) con un $R^2$ de **0.8436**, lo que demuestra una alta capacidad para predecir los precios de las propiedades en Antioquia basándose en las características físicas y de ubicación.
+
+            """)
 
 
 
