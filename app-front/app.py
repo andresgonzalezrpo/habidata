@@ -47,19 +47,42 @@ if 'preprocessor' not in st.session_state:
     st.session_state.preprocessor = None
 
 # --- Creación de Pestañas ---
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-    "1. Carga de Datos",
-    "2. Exploración",
-    "3. Limpieza",
-    "4. Preparación",
-    "5. Entrenamiento",
-    "6. Predicción",
-    "7. Interpretación",
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
+    "1. Presentación del equipo",
+    "2. Carga de Datos",
+    "3. Exploración",
+    "4. Limpieza",
+    "5. Preparación",
+    "6. Entrenamiento",
+    "7. Predicción",
+    "8. Interpretación",
     
 ])
 
-# --- Pestaña 1: Carga de Datos ---
+# --- Presentación del equipo ---
 with tab1:
+    st.header("👥 Equipo de Trabajo")
+    plots_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plots/miembros')
+    
+
+
+    # Información de los miembros del equipo
+    miembros = [
+        {"nombre": "Giovanny Casas Agudelo", "foto": "Gio.jpg"},
+        {"nombre": "Carmen Carvajal Gutiérrez", "foto": "Carmen.jpg"},
+        {"nombre": "Camilo Arango Yepes", "foto": "camilo.jpg"},
+        {"nombre": "Andrés González Restrepo", "foto": "Andres1.jpg"}
+    ]
+
+    # Mostrar los miembros en columnas
+    cols = st.columns(len(miembros))
+
+    for col, miembro in zip(cols, miembros):
+        with col:
+            st.image(os.path.join(plots_dir, miembro["foto"]), width=150, caption=miembro["nombre"])
+
+# --- Pestaña 1: Carga de Datos ---
+with tab2:
     st.header("Paso 1: Cargar el Conjunto de Datos")
     st.info("Haz clic en el botón para cargar los datos de propiedades en Antioquia.")
 
@@ -78,7 +101,7 @@ def info_as_dataframe(df):
     }
     return pd.DataFrame(info)
 
-with tab2:
+with tab3:
     st.header("Paso 2: Análisis Exploratorio de Datos (EDA)")
     if st.session_state.data is not None:
         if st.button("Explorar Datos"):
@@ -92,7 +115,7 @@ with tab2:
                     f"Columnas: {df_explorado['Cantidad de registros'][1]}"
                 )
 
-                st.subheader("Info")
+                st.subheader("Descripción de las Columnas y Datos")
                 st.dataframe(info_as_dataframe(st.session_state.data), width='content')
                 st.subheader("Estadísticas descriptivas")
                 st.dataframe(df_explorado["Estadísticas descriptivas"])
@@ -126,7 +149,7 @@ with tab2:
 
 
 # --- Pestaña 3: Preparación de Datos (Visualización Estática) ---
-with tab3:
+with tab4:
     st.header("📊 Paso 3: Proceso de Limpieza y Preparación")
     
     st.markdown("""
@@ -624,7 +647,7 @@ with tab3:
         """, language="text")
 
 # --- Pestaña 4: Preparación de Datos ---
-with tab4:
+with tab5:
     st.header("Paso 4: Preparar los Datos para el Modelo")   
     
     with st.spinner("Cargando datos..."):
@@ -658,7 +681,7 @@ with tab4:
             st.write("Vista previa de los datos de entrenamiento (X_train):")
             st.dataframe(X_train.head())
 
-with tab5:
+with tab6:
     st.header("Paso 5: Entrenar y Evaluar Múltiples Modelos")
     if st.session_state.prepared_model is not None:
         if st.button("Entrenar y Evaluar Modelos"):
@@ -739,7 +762,7 @@ with tab5:
         st.warning("Por favor, prepara los datos en la Pestaña 4 (Preparar el modelo) primero.")
 
 
-with tab6:
+with tab7:
     st.header("Paso 6: Simular y Realizar una Predicción de Precio")
 
     # Verificamos que el modelo esté cargado correctamente en la sesión
@@ -900,7 +923,7 @@ with tab6:
 
     else:
         st.warning("Por favor, carga los datos en la Pestaña 5 (entrenamiento) primero.")
-with tab7:
+with tab8:
     st.header("Paso 7: Interpretación del Modelo")
     
     if st.button("Interpretar Modelo"):
