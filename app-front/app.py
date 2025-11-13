@@ -168,7 +168,7 @@ with tab4:
     with col1:
         st.metric("Dataset Inicial", "1,000,000", help="Propiedades en Colombia")
     with col2:
-        st.metric("Dataset Final", "~21,000", delta="-97.9%", help="Después de filtros y limpieza completa")
+        st.metric("Dataset Final", "~21,192", delta="-97.9%", help="Después de filtros y limpieza completa")
     with col3:
         st.metric("Conservación", "~2.1%", help="Datos de alta calidad preservados")
     with col4:
@@ -467,21 +467,22 @@ with tab4:
         """)
         
         col1, col2 = st.columns(2)
+        
         with col1:
             st.markdown("""
             *Variables Requeridas:*
             - ✅ surface_total_final
             - ✅ bedrooms_final
             - ✅ bathrooms_final
-            - ✅ property_type
-            - ✅ lat / lon
+            - ✅ l3_final(ciudad)
+            - ✅ l4_final(barrio)
             - ✅ price
             """)
         
         with col2:
             st.metric("Antes del Filtro", "140,435")
-            st.metric("Después del Filtro", "~21,000", delta="-85%")
-            st.metric("Registros Eliminados", "~119,000")
+            st.metric("Después del Filtro", "~21,192", delta="-85%")
+            st.metric("Registros Eliminados", "~119,243")
         
         st.info("""
         *Justificación Técnica:*
@@ -617,34 +618,7 @@ with tab4:
     *Próximo Paso:* Entrenar modelos de predicción de precios con este dataset premium
     """)
     
-    # Botón informativo
-    if st.button("📥 Ver Estructura del Dataset Final", type="primary"):
-        st.code("""
-        Dataset Final: properties_gold.csv
-        
-        Columnas (15):
-        ├── ad_type           : Tipo de anuncio
-        ├── start_date        : Fecha inicio
-        ├── end_date          : Fecha fin
-        ├── created_on        : Fecha creación
-        ├── lat               : Latitud (100% completo)
-        ├── lon               : Longitud (100% completo)
-        ├── price             : Precio en COP (100% completo)
-        ├── title             : Título del anuncio
-        ├── description       : Descripción completa
-        ├── property_type     : Tipo (Casa/Apartamento)
-        ├── operation_type    : Operación (Venta)
-        ├── surface_total_final   : Superficie m² (100% completo)
-        ├── bedrooms_final        : Habitaciones (100% completo)
-        ├── bathrooms_final       : Baños (100% completo)
-        ├── l3_final              : Ciudad (100% completo)
-        └── l4_final              : Barrio (disponible)
-        
-        Total Registros: ~21,000
-        Completitud: 100% en variables críticas
-        Tamaño: ~5 MB
-        Calidad: Premium - Sin valores faltantes en predictores
-        """, language="text")
+   
 
 # --- Pestaña 4: Preparación de Datos ---
 with tab5:
